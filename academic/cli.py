@@ -13,6 +13,7 @@ from enum import Enum
 from pathlib import Path
 
 import bibtexparser
+import toml
 from bibtexparser.bibdatabase import BibDatabase
 from bibtexparser.bparser import BibTexParser
 from bibtexparser.bwriter import BibTexWriter
@@ -175,9 +176,7 @@ def parse_bibtex_entry(entry, pub_dir="publication", featured=False, overwrite=F
         with open(cite_path, "w", encoding="utf-8") as f:
             f.write(writer.write(db))
 
-    # Prepare YAML front matter for Markdown file.
-    frontmatter = ["---"]
-    frontmatter.append(f'title: "{clean_bibtex_str(entry["title"])}"')
+    # Prepare TOML front matter for Markdown file.
     year = ""
     month = "01"
     day = "01"
@@ -195,9 +194,12 @@ def parse_bibtex_entry(entry, pub_dir="publication", featured=False, overwrite=F
         year = entry["year"]
     if len(year) == 0:
         log.error(f'Invalid date for entry `{entry["ID"]}`.')
-    frontmatter.append(f"date: {year}-{month}-{day}")
 
-    frontmatter.append(f"publishDate: {timestamp}")
+    metadata = {
+        'title': entry['title'],
+        'date': f'{year}-{month}-{day}',
+        'publishDate': str(timestamp)
+        }
 
     authors = None
     if "author" in entry:
@@ -206,49 +208,51 @@ def parse_bibtex_entry(entry, pub_dir="publication", featured=False, overwrite=F
         authors = entry["editor"]
     if authors:
         authors = clean_bibtex_authors([i.strip() for i in authors.replace("\n", " ").split(" and ")])
-        frontmatter.append(f"authors: [{', '.join(authors)}]")
+        metadata['authors'] = authors
 
     pubtype = PUB_TYPES.get(entry["ENTRYTYPE"], PublicationType.Uncategorized)
-    frontmatter.append(f'publication_types: ["{pubtype.value}"]')
+    metadata['publication_types'] = [str(pubtype.value)]
 
     if "abstract" in entry:
-        frontmatter.append(f'abstract: "{clean_bibtex_str(entry["abstract"])}"')
+        metadata['abstract'] = entry["abstract"]
     else:
-        frontmatter.append('abstract: ""')
+        metadata['abstract'] = ''
 
-    frontmatter.append(f"featured: {str(featured).lower()}")
+    metadata['featured'] = str(featured).lower()
 
     # Publication name.
     if "booktitle" in entry:
-        frontmatter.append(f'publication: "*{clean_bibtex_str(entry["booktitle"])}*"')
+        metadata['publication'] = f'*{entry["booktitle"]}*'
     elif "journal" in entry:
-        frontmatter.append(f'publication: "*{clean_bibtex_str(entry["journal"])}*"')
+        metadata['publication'] = f'*{entry["journal"]}*'
     elif "publisher" in entry:
-        frontmatter.append(f'publication: "*{clean_bibtex_str(entry["publisher"])}*"')
+        metadata['publication'] = f'*{entry["publisher"]}*'
     else:
-        frontmatter.append('publication: ""')
+        metadata['publication'] = ''
 
     if "keywords" in entry:
-        frontmatter.append(f'tags: [{clean_bibtex_tags(entry["keywords"], normalize)}]')
+        metadata['tags'] = clean_bibtex_tags(entry['keywords'], normalize)
 
     if "url" in entry:
-        frontmatter.append(f'url_pdf: "{clean_bibtex_str(entry["url"])}"')
+        metadata['url_pdf'] = entry['url']
 
     if "doi" in entry:
-        frontmatter.append(f'doi: "{entry["doi"]}"')
+        metadata['doi'] = entry['doi']
 
-    frontmatter.append("---\n\n")
+    frontmatter = '+++\n'
+    frontmatter += toml.dumps(metadata)
+    frontmatter += '+++\n\n'
 
     # Save Markdown file.
     try:
         log.info(f"Saving Markdown to '{markdown_path}'")
         if not dry_run:
             with open(markdown_path, "w", encoding="utf-8") as f:
-                f.write("\n".join(frontmatter))
+                f.write(frontmatter)
     except IOError:
         log.error("Could not save file.")
 
-    return frontmatter
+    return metadata, frontmatter
 
 
 def slugify(s, lower=True):
@@ -289,27 +293,16 @@ def clean_bibtex_authors(author_str):
         for item in first_names:
             if item in ["ben", "van", "der", "de", "la", "le"]:
                 last_name = first_names.pop() + " " + last_name
-        authors.append(f'"{" ".join(first_names)} {last_name}"')
+        authors.append(f'{" ".join(first_names)} {last_name}')
     return authors
-
-
-def clean_bibtex_str(s):
-    """Clean BibTeX string and escape TOML special characters"""
-    s = s.replace("\\", "")
-    s = s.replace('"', '\\"')
-    s = s.replace("{", "").replace("}", "")
-    s = s.replace("\t", " ").replace("\n", " ").replace("\r", "")
-    return s
 
 
 def clean_bibtex_tags(s, normalize=False):
     """Clean BibTeX keywords and convert to TOML tags"""
-    tags = clean_bibtex_str(s).split(",")
-    tags = [f'"{tag.strip()}"' for tag in tags]
+    tags = [tag.strip() for tag in s.split(",")]
     if normalize:
         tags = [tag.lower().capitalize() for tag in tags]
-    tags_str = ", ".join(tags)
-    return tags_str
+    return tags
 
 
 def month2number(month):
