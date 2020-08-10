@@ -1,5 +1,3 @@
-import logging
-import tempfile
 from pathlib import Path
 
 import bibtexparser
@@ -31,4 +29,8 @@ def _test_publication_type(metadata, expected_type: cli.PublicationType):
 
 def test_bibtex_types():
     _test_publication_type(_process_bibtex('article.bib')[0], cli.PublicationType.JournalArticle)
-    _test_publication_type(_process_bibtex('report.bib')[0], cli.PublicationType.Report)
+    for metadata in _process_bibtex('report.bib', expected_count=3):
+        _test_publication_type(metadata, cli.PublicationType.Report)
+    for metadata in _process_bibtex('thesis.bib', expected_count=3):
+        _test_publication_type(metadata, cli.PublicationType.Thesis)
+    _test_publication_type(_process_bibtex('book.bib')[0], cli.PublicationType.Book)
