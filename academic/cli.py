@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 
-import subprocess
-import sys
-import os
-import re
 import argparse
-from argparse import RawTextHelpFormatter
-from enum import Enum
-from pathlib import Path
 import calendar
 import logging
+import os
+import re
+import subprocess
+import sys
+from argparse import RawTextHelpFormatter
 from datetime import datetime
-from academic import __version__ as version
-from academic.import_assets import import_assets
+from enum import Enum
+from pathlib import Path
 
 import bibtexparser
+from bibtexparser.bibdatabase import BibDatabase
 from bibtexparser.bparser import BibTexParser
 from bibtexparser.bwriter import BibTexWriter
-from bibtexparser.bibdatabase import BibDatabase
 from bibtexparser.customization import convert_to_unicode
+
+from academic import __version__ as version
+from academic.import_assets import import_assets
 
 
 # Map BibTeX to Academic publication types.
