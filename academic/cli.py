@@ -91,6 +91,8 @@ def parse_args(args):
     parser_a.add_argument("--featured", action="store_true", help="Flag publications as featured")
     parser_a.add_argument("--overwrite", action="store_true", help="Overwrite existing publications")
     parser_a.add_argument("--normalize", action="store_true", help="Normalize each keyword to lowercase with uppercase first letter")
+    parser_a.add_argument("--publish-date-from-bibtex", action="store_true",
+                          help="Use the bibtex date field as the publishDate metadata instead of the current time")
     parser_a.add_argument("-v", "--verbose", action="store_true", required=False, help="Verbose mode")
     parser_a.add_argument("-dr", "--dry-run", action="store_true", required=False, help="Perform a dry run (Bibtex only)")
 
@@ -125,10 +127,12 @@ def parse_args(args):
                 overwrite=known_args.overwrite,
                 normalize=known_args.normalize,
                 dry_run=known_args.dry_run,
+                publish_date_from_bibtex=known_args.publish_date_from_bibtex
             )
 
 
-def import_bibtex(bibtex, pub_dir="publication", featured=False, overwrite=False, normalize=False, dry_run=False):
+def import_bibtex(bibtex, pub_dir="publication", featured=False, overwrite=False, normalize=False, dry_run=False,
+                  publish_date_from_bibtex=False):
     """Import publications from BibTeX file"""
 
     # Check BibTeX file exists.
@@ -144,10 +148,12 @@ def import_bibtex(bibtex, pub_dir="publication", featured=False, overwrite=False
         parser.ignore_nonstandard_types = False
         bib_database = bibtexparser.load(bibtex_file, parser=parser)
         for entry in bib_database.entries:
-            parse_bibtex_entry(entry, pub_dir=pub_dir, featured=featured, overwrite=overwrite, normalize=normalize, dry_run=dry_run)
+            parse_bibtex_entry(entry, pub_dir=pub_dir, featured=featured, overwrite=overwrite, normalize=normalize,
+                               dry_run=dry_run, publish_date_from_bibtex=publish_date_from_bibtex)
 
 
-def parse_bibtex_entry(entry, pub_dir="publication", featured=False, overwrite=False, normalize=False, dry_run=False):
+def parse_bibtex_entry(entry, pub_dir="publication", featured=False, overwrite=False, normalize=False, dry_run=False,
+                       publish_date_from_bibtex=False):
     """Parse a bibtex entry and generate corresponding publication bundle"""
     log.info(f"Parsing entry {entry['ID']}")
 
@@ -195,10 +201,11 @@ def parse_bibtex_entry(entry, pub_dir="publication", featured=False, overwrite=F
     if len(year) == 0:
         log.error(f'Invalid date for entry `{entry["ID"]}`.')
 
+    bibtex_date = f'{year}-{month}-{day}'
     metadata = {
         'title': entry['title'],
-        'date': f'{year}-{month}-{day}',
-        'publishDate': str(timestamp)
+        'date': bibtex_date,
+        'publishDate': bibtex_date if publish_date_from_bibtex else str(timestamp)
         }
 
     authors = None
