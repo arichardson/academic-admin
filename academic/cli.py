@@ -226,6 +226,8 @@ def parse_bibtex_entry(entry, pub_dir="publication", featured=False, overwrite=F
         metadata['publication'] = f'*{entry["journal"]}*'
     elif "publisher" in entry:
         metadata['publication'] = f'*{entry["publisher"]}*'
+    elif "institution" in entry:
+        metadata['publication'] = f'*{entry["institution"]}*'
     else:
         metadata['publication'] = ''
 
