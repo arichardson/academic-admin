@@ -45,6 +45,11 @@ def test_long_abstract():
     result = _process_bibtex("book.bib", normalize=True)[0]
 
     assert result.fm["abstract"] == "Paragraph one.\n\nParagraph two.\n\nParagraph three."
+    assert result.fm["authors"] == [
+        "Nelson Bigetti",
+        "Firstname von Book-Author, Jr.",
+        "Someone Else"
+    ]
 
     with tempfile.NamedTemporaryFile("w") as output:
         result.path = Path(output.name)
@@ -61,6 +66,8 @@ def test_long_abstract():
         "date: '2019-01-01'",
         "authors:",
         "- Nelson Bigetti",
+        "- Firstname von Book-Author, Jr.",
+        "- Someone Else",
         "publication_types:",
         "- '5'",
         "abstract: \"Paragraph one.\\n\\nParagraph two.\\n\\nParagraph three.\"",

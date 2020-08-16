@@ -145,7 +145,7 @@ def parse_bibtex_entry(
         authors = entry["editor"]
 
     if authors:
-        authors = clean_bibtex_authors([i.strip() for i in authors.replace("\n", " ").split(" and ")])
+        authors = clean_bibtex_authors(authors)
         page.fm["authors"] = authors
 
     pubtype = PUB_TYPES.get(entry["ENTRYTYPE"], PublicationType.Uncategorized)
@@ -209,29 +209,12 @@ def slugify(s, lower=True):
 def clean_bibtex_authors(author_str):
     """Convert author names to `firstname(s) lastname` format."""
     authors = []
-    for s in author_str:
-        s = s.strip()
-        if len(s) < 1:
-            continue
-
-        if "," in s:
-            split_names = s.split(",", 1)
-            last_name = split_names[0].strip()
-            first_names = [i.strip() for i in split_names[1].split()]
-        else:
-            split_names = s.split()
-            last_name = split_names.pop()
-            first_names = [i.replace(".", ". ").strip() for i in split_names]
-
-        if last_name in ["jnr", "jr", "junior"]:
-            last_name = first_names.pop()
-
-        for item in first_names:
-            if item in ["ben", "van", "der", "de", "la", "le"]:
-                last_name = first_names.pop() + " " + last_name
-
-        authors.append(" ".join(first_names) + " " + last_name)
-
+    for author in author_str.replace('\n', ' ').split(" and "):
+        name_parts = bibtexparser.customization.splitname(author)
+        fullname = ' '.join(name_parts['first'] + name_parts['von'] + name_parts['last'])
+        if name_parts['jr']:
+            fullname += ', ' + ' '.join(name_parts['jr'])
+        authors.append(fullname)
     return authors
 
 
