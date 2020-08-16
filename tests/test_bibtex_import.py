@@ -50,6 +50,7 @@ def test_long_abstract():
         "Firstname von Book-Author, Jr.",
         "Someone Else"
     ]
+    assert result.fm["featured"] is True
 
     with tempfile.NamedTemporaryFile("w") as output:
         result.path = Path(output.name)
@@ -71,7 +72,7 @@ def test_long_abstract():
         "publication_types:",
         "- '5'",
         "abstract: \"Paragraph one.\\n\\nParagraph two.\\n\\nParagraph three.\"",
-        "featured: false",
+        "featured: true",
         "publication: ''",
         "tags:",
         "- Tag1",
