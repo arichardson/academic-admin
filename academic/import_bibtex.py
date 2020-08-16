@@ -123,7 +123,24 @@ def parse_bibtex_entry(
     else:
         page.fm["abstract"] = ""
 
-    page.fm["featured"] = featured
+    # Allow reading the featured from the bibtex options key
+    featured_from_bibtex = featured
+    if "options" in entry:
+        try:
+            options = entry["options"].split(',')
+            for option in options:
+                assert isinstance(option, str)
+                if "=" in option:
+                    k, v = option.split("=", )
+                    if k.strip() == "featured":
+                        featured_from_bibtex = bool(v.strip())
+                        break
+                elif option.strip() == "featured":
+                    featured_from_bibtex = True
+                    break
+        except Exception as e:
+            log.warning("Could not parse options field: " + entry["options"], exc_info=e)
+    page.fm["featured"] = featured_from_bibtex
 
     # Publication name.
     if "booktitle" in entry:
