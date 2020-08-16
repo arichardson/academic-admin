@@ -63,6 +63,7 @@ def test_resulting_yaml_output():
 
     # Check that the paragraph breaks were not stripped from the YAML:
     assert result.fm["abstract"] == "Paragraph one.\n\nParagraph two.\n\nParagraph three."
+    assert result.fm["authors"] == ["Nelson Bigetti", "Firstname von Book-Author, Jr.", "Someone Else"]
 
     # Don't check the full string for publishDate since that is not constant.
     del result.fm["publishDate"]
@@ -79,6 +80,8 @@ def test_resulting_yaml_output():
         "date: '2019-01-01'",
         "authors:",
         "- Nelson Bigetti",
+        "- Firstname von Book-Author, Jr.",
+        "- Someone Else",
         "publication_types:",
         "- '5'",
         'abstract: "Paragraph one.\\n\\nParagraph two.\\n\\nParagraph three."',
