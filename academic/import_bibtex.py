@@ -165,6 +165,8 @@ def parse_bibtex_entry(
         publication = "*" + entry["journal"] + "*"
     elif "publisher" in entry:
         publication = "*" + entry["publisher"] + "*"
+    elif "institution" in entry:
+        publication = "*" + entry["institution"] + "*"
     else:
         publication = ""
     page.fm["publication"] = publication
