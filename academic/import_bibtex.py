@@ -17,9 +17,7 @@ from academic.editFM import EditableFM
 from academic.publication_type import PUB_TYPES, PublicationType
 
 
-def import_bibtex(
-    bibtex, pub_dir="publication", featured=False, overwrite=False, normalize=False, dry_run=False,
-):
+def import_bibtex(bibtex, pub_dir="publication", featured=False, overwrite=False, normalize=False, dry_run=False, publish_date_from_bibtex=False):
     """Import publications from BibTeX file"""
     from academic.cli import AcademicError, log
 
@@ -37,13 +35,17 @@ def import_bibtex(
         bib_database = bibtexparser.load(bibtex_file, parser=parser)
         for entry in bib_database.entries:
             parse_bibtex_entry(
-                entry, pub_dir=pub_dir, featured=featured, overwrite=overwrite, normalize=normalize, dry_run=dry_run,
+                entry,
+                pub_dir=pub_dir,
+                featured=featured,
+                overwrite=overwrite,
+                normalize=normalize,
+                dry_run=dry_run,
+                publish_date_from_bibtex=publish_date_from_bibtex,
             )
 
 
-def parse_bibtex_entry(
-    entry, pub_dir="publication", featured=False, overwrite=False, normalize=False, dry_run=False,
-):
+def parse_bibtex_entry(entry, pub_dir="publication", featured=False, overwrite=False, normalize=False, dry_run=False, publish_date_from_bibtex=False):
     """Parse a bibtex entry and generate corresponding publication bundle"""
     from academic.cli import log
 
@@ -103,7 +105,12 @@ def parse_bibtex_entry(
         log.error(f'Invalid date for entry `{entry["ID"]}`.')
 
     page.fm["date"] = "-".join([year, month, day])
-    page.fm["publishDate"] = timestamp
+    if "publishDate" in page.fm:
+        pass  # don't overwrite the existing publishDate
+    elif publish_date_from_bibtex:
+        page.fm["publishDate"] = page.fm["date"]
+    else:
+        page.fm["publishDate"] = timestamp
 
     authors = None
     if "author" in entry:
@@ -127,11 +134,11 @@ def parse_bibtex_entry(
     featured_from_bibtex = featured
     if "options" in entry:
         try:
-            options = entry["options"].split(',')
+            options = entry["options"].split(",")
             for option in options:
                 assert isinstance(option, str)
                 if "=" in option:
-                    k, v = option.split("=", )
+                    k, v = option.split("=",)
                     if k.strip() == "featured":
                         featured_from_bibtex = bool(v.strip())
                         break
@@ -195,11 +202,11 @@ def slugify(s, lower=True):
 def clean_bibtex_authors(author_str):
     """Convert author names to `firstname(s) lastname` format."""
     authors = []
-    for author in author_str.replace('\n', ' ').split(" and "):
+    for author in author_str.replace("\n", " ").split(" and "):
         name_parts = bibtexparser.customization.splitname(author)
-        fullname = ' '.join(name_parts['first'] + name_parts['von'] + name_parts['last'])
-        if name_parts['jr']:
-            fullname += ', ' + ' '.join(name_parts['jr'])
+        fullname = " ".join(name_parts["first"] + name_parts["von"] + name_parts["last"])
+        if name_parts["jr"]:
+            fullname += ", " + " ".join(name_parts["jr"])
         authors.append(fullname)
     return authors
 
